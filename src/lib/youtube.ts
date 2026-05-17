@@ -39,13 +39,27 @@ export async function resolveChannel(input: string): Promise<ChannelInfo | null>
 
   let url: string;
   if (/^https?:\/\//i.test(raw)) {
-    url = raw;
+    let parsed: URL;
+    try {
+      parsed = new URL(raw);
+    } catch {
+      return null;
+    }
+    // Lock the fetch to YouTube only to prevent the channel field being used
+    // as an SSRF lever against internal services.
+    if (!/(^|\.)youtube\.com$/i.test(parsed.hostname) && parsed.hostname !== "youtu.be") {
+      return null;
+    }
+    url = parsed.toString();
   } else if (raw.startsWith("@")) {
-    url = `https://www.youtube.com/${raw}`;
+    const handle = raw.slice(1);
+    if (!/^[\w.-]{1,60}$/.test(handle)) return null;
+    url = `https://www.youtube.com/@${handle}`;
   } else if (/^UC[\w-]{20,}$/i.test(raw)) {
     url = `https://www.youtube.com/channel/${raw}`;
   } else {
-    url = `https://www.youtube.com/@${raw.replace(/^@/, "")}`;
+    if (!/^[\w.-]{1,60}$/.test(raw)) return null;
+    url = `https://www.youtube.com/@${raw}`;
   }
 
   // Use a desktop UA so we get the full page, not a stripped mobile shell.
@@ -108,18 +122,4 @@ export async function fetchRecentVideos(
     const published = pick(block, /<published>([^<]+)<\/published>/);
     const description =
       pick(block, /<media:description>([\s\S]*?)<\/media:description>/) || "";
-    const thumb = pick(block, /<media:thumbnail url="([^"]+)"/);
-    if (!videoId || !title || !published) continue;
-    const ts = Date.parse(published);
-    if (Number.isFinite(ts) && ts < cutoff) continue;
-    out.push({
-      videoId,
-      url: `https://www.youtube.com/watch?v=${videoId}`,
-      title: decodeEntities(title),
-      description: decodeEntities(description),
-      publishedAt: published,
-      thumbnail: thumb || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-    });
-  }
-  return out;
-}
+    const thumb = pick(block, /<med
