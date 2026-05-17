@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --accent: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --panel: #111113;
+  --border: #262629;
+}
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+button { cursor: pointer; }
+input, button, select { font: inherit; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulse-ring { animation: pulseRing 2.5s ease-out infinite; }
+}
+@keyframes pulseRing {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  70% { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
